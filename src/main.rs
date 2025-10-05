@@ -1,3 +1,4 @@
+use std::io;
 enum Room {
     Entrance,
     Hallway,
@@ -21,6 +22,7 @@ enum Command {
     Look,
     Quit,
 }
+
 fn handle_command(command: Command, current_room: &mut Room) {
     match command {
         Command::Go(direction) => {
@@ -36,4 +38,56 @@ fn handle_command(command: Command, current_room: &mut Room) {
         }
     }
 }
-fn main() {}
+fn main() {
+    let mut current_room = Room::Entrance;
+
+    loop {
+        println!("{}", describe_room(&current_room));
+        println!("What do you do?");
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+
+        let mut parts = input.trim().split_whitespace();
+        let command = parts.next().unwrap_or("");
+        let argument = parts.next().unwrap_or("").to_string();
+
+        let command = match command {
+            "go" => Command::Go(argument),
+            "look" => Command::Look,
+            "quit" => Command::Quit,
+            _ => {
+                println!("I don't understand that command.");
+                continue;
+            }
+        };
+
+        match command {
+            Command::Go(direction) => {
+                let next_room = match (&current_room, direction.as_str()) {
+                    (Room::Entrance, "north") => Some(Room::Hallway),
+                    (Room::Hallway, "south") => Some(Room::Entrance),
+                    (Room::Hallway, "east") => Some(Room::Kitchen),
+                    (Room::Hallway, "west") => Some(Room::Library),
+                    (Room::Kitchen, "west") => Some(Room::Hallway),
+                    (Room::Library, "east") => Some(Room::Hallway),
+                    (Room::Library, "north") => Some(Room::SecretChamber),
+                    _ => None,
+                };
+
+                if let Some(room) = next_room {
+                    current_room = room;
+                } else {
+                    println!("You can't go that way.");
+                }
+            }
+            Command::Look => {
+                // The room description is already printed at the start of the loop.
+            }
+            Command::Quit => {
+                println!("Goodbye!");
+                break;
+            }
+        }
+    }
+}
